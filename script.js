@@ -11,12 +11,20 @@ document.addEventListener('DOMContentLoaded', function() {
     initFadeInAnimations();
     initContactForm();
     initNavbarScroll();
+    initContactModal();
 });
 
 // Inicializa o menu mobile
 function initMobileMenu() {
     const menuBtn = document.querySelector('.menu-btn');
     const navLinks = document.querySelector('.nav-links');
+    
+    // Verificar tamanho da tela para mostrar ou esconder a navegação
+    if (window.innerWidth > 768 && navLinks) {
+        navLinks.style.display = 'flex';
+        navLinks.style.opacity = '1';
+        navLinks.style.transform = 'translateY(0)';
+    }
     
     if (menuBtn) {
         menuBtn.addEventListener('click', function() {
@@ -57,11 +65,13 @@ function initMobileMenu() {
         });
     }
 
-    // Adicionar estilos iniciais
+    // Adicionar estilos iniciais apenas para mobile
     if (navLinks) {
         navLinks.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-        navLinks.style.opacity = '0';
-        navLinks.style.transform = 'translateY(-10px)';
+        if (window.innerWidth <= 768) {
+            navLinks.style.opacity = '0';
+            navLinks.style.transform = 'translateY(-10px)';
+        }
     }
 }
 
@@ -251,6 +261,7 @@ window.addEventListener('resize', function() {
         isMenuOpen = false;
         menuBtn.innerHTML = '<i class="fas fa-bars"></i>';
     } else if (window.innerWidth <= 768 && navLinks && !isMenuOpen) {
+        // Esconde a navegação em mobile se o menu não estiver aberto
         navLinks.style.display = 'none';
     }
     
@@ -266,4 +277,178 @@ window.addEventListener('resize', function() {
             heroSpline.style.opacity = '0.9';
         }
     }
-}); 
+});
+
+// Inicializa o modal de contato
+function initContactModal() {
+    const contactModal = document.getElementById('contact-modal');
+    const projectModal = document.getElementById('project-modal');
+    const closeContactBtn = document.querySelector('.close-modal');
+    const closeProjectBtn = document.querySelector('.close-project-modal');
+    const openModalButtons = document.querySelectorAll('.open-modal');
+    const heroContactBtn = document.getElementById('contact-hero-btn');
+    const describeProjectBtn = document.getElementById('describe-project-btn');
+    const projectForm = document.querySelector('.project-form');
+    
+    // Abre o modal nos botões padrão com classe .open-modal
+    openModalButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            openModal(contactModal);
+        });
+    });
+    
+    // Abre o modal no botão do hero section
+    if (heroContactBtn) {
+        heroContactBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            openModal(contactModal);
+        });
+    }
+    
+    // Fecha o modal quando clicar no X
+    if (closeContactBtn) {
+        closeContactBtn.addEventListener('click', () => closeModal(contactModal));
+    }
+    
+    // Fecha o modal quando clicar fora dele
+    window.addEventListener('click', function(e) {
+        if (e.target == contactModal) {
+            closeModal(contactModal);
+        }
+        if (e.target == projectModal) {
+            closeModal(projectModal);
+        }
+    });
+    
+    // Fecha o modal com tecla ESC
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            if (contactModal.classList.contains('active')) {
+                closeModal(contactModal);
+            }
+            if (projectModal.classList.contains('active')) {
+                closeModal(projectModal);
+            }
+        }
+    });
+    
+    // Abre o modal de descrição de projeto quando clicar no card
+    if (describeProjectBtn) {
+        describeProjectBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            closeModal(contactModal);
+            
+            // Pequeno atraso para garantir que o primeiro modal seja fechado
+            setTimeout(() => {
+                openModal(projectModal);
+            }, 300);
+        });
+    }
+    
+    // Fecha o modal de projeto quando clicar no X
+    if (closeProjectBtn) {
+        closeProjectBtn.addEventListener('click', () => closeModal(projectModal));
+    }
+    
+    // Processa o envio do formulário do projeto
+    if (projectForm) {
+        projectForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Coletar dados do formulário
+            const projectName = document.getElementById('project-name').value;
+            const projectType = document.getElementById('project-type').value;
+            const projectDescription = document.getElementById('project-description').value;
+            const projectContact = document.getElementById('project-contact').value;
+            
+            // Formatar a mensagem para o WhatsApp
+            const projectTypeText = projectType ? 
+                document.querySelector(`#project-type option[value="${projectType}"]`).textContent : 
+                "Não especificado";
+                
+            let whatsappMessage = `*NOVO PROJETO*\n\n`;
+            whatsappMessage += `*Nome do Projeto:* ${projectName}\n`;
+            whatsappMessage += `*Tipo de Projeto:* ${projectTypeText}\n`;
+            whatsappMessage += `*Descrição:* ${projectDescription}\n`;
+            whatsappMessage += `*Contato:* ${projectContact}\n`;
+            
+            // Codificar a mensagem para URL
+            const encodedMessage = encodeURIComponent(whatsappMessage);
+            
+            // Criar o link do WhatsApp (substitua o número pelo seu número de WhatsApp)
+            const whatsappLink = `https://wa.me/5517999754390?text=${encodedMessage}`;
+            
+            // Mostrar mensagem de sucesso e redirecionar
+            const submitButton = document.querySelector('.submit-project-btn');
+            submitButton.disabled = true;
+            submitButton.textContent = 'Enviando...';
+            
+            setTimeout(() => {
+                // Limpar formulário
+                projectForm.reset();
+                
+                // Mostrar mensagem rápida
+                showRedirectMessage(projectForm, projectModal, whatsappLink);
+                
+                // Restaurar o botão
+                submitButton.disabled = false;
+                submitButton.textContent = 'Enviar Projeto';
+            }, 1000);
+        });
+    }
+    
+    function openModal(modal) {
+        document.body.style.overflow = 'hidden'; // Impede scroll da página
+        modal.style.display = 'block';
+        
+        // Pequeno atraso para permitir que o modal seja exibido antes da animação
+        setTimeout(() => {
+            modal.classList.add('active');
+        }, 10);
+    }
+    
+    function closeModal(modal) {
+        modal.classList.remove('active');
+        
+        // Aguarda a animação de fade-out terminar antes de ocultar completamente
+        setTimeout(() => {
+            modal.style.display = 'none';
+            document.body.style.overflow = ''; // Restaura scroll da página
+        }, 300);
+    }
+    
+    function showRedirectMessage(form, modal, whatsappLink) {
+        // Remove o formulário
+        form.style.display = 'none';
+        
+        // Cria e mostra a mensagem de redirecionamento
+        const successDiv = document.createElement('div');
+        successDiv.className = 'success-message';
+        successDiv.innerHTML = `
+            <i class="fas fa-check-circle"></i>
+            <h3>Projeto pronto para envio!</h3>
+            <p>Clique no botão abaixo para enviar seu projeto diretamente pelo WhatsApp.</p>
+            <a href="${whatsappLink}" target="_blank" class="submit-project-btn">Enviar via WhatsApp</a>
+            <button class="submit-project-btn close-success-btn" style="background: #718096; margin-top: 10px;">Cancelar</button>
+        `;
+        
+        // Adiciona ao modal
+        modal.querySelector('.modal-content').appendChild(successDiv);
+        
+        // Mostra a mensagem
+        successDiv.style.display = 'block';
+        
+        // Adiciona evento para o botão de fechar
+        successDiv.querySelector('.close-success-btn').addEventListener('click', () => {
+            // Fecha o modal
+            closeModal(modal);
+            
+            // Limpa após fechar
+            setTimeout(() => {
+                form.style.display = 'flex';
+                successDiv.remove();
+            }, 300);
+        });
+    }
+} 
